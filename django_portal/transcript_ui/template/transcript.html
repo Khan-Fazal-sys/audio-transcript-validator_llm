@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speech to text</title>
+<style>
+  :root{
+    --panel: #1c1b19;
+    --panel-raised: #232220;
+    --paper: #f6f5f2;
+    --ink: #1c1b19;
+    --ink-soft: #8a8780;
+    --line: #34322e;
+    --line-soft: #e4e2db;
+    --signal: #e8a33d;
+    --signal-dim: #6b5127;
+    --danger: #d9614f;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "SF Mono", "Cascadia Mono", Consolas, monospace;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font-ui);
+    background: var(--panel);
+    color: var(--paper);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 48px 20px;
+  }
+
+  .rack{
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .header{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding: 0 4px;
+  }
+
+  .header h1{
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+
+  .header .status{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status .dot{
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--signal);
+  }
+
+  .panel{
+    background: var(--panel-raised);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 28px;
+  }
+
+  .subtitle{
+    color: var(--ink-soft);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0 0 24px;
+    max-width: 46ch;
+  }
+
+  .dropzone{
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0;
+    background: #181715;
+    overflow: hidden;
+  }
+
+  .dropzone.drag{
+    border-color: var(--signal);
+  }
+
+  .dropzone-inner{
+    padding: 28px 20px;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .dropzone-inner .icon{
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 12px;
+    color: var(--ink-soft);
+  }
+
+  .dropzone-inner .primary{
+    font-size: 14px;
+    color: var(--paper);
+    margin-bottom: 4px;
+  }
+
+  .dropzone-inner .primary .file-name{
+    color: var(--signal);
+    font-family: var(--font-mono);
+  }
+
+  .dropzone-inner .secondary{
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+  }
+
+  input[type="file"]{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .formats{
+    margin-top: 10px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+  }
+
+  button{
+    width: 100%;
+    margin-top: 20px;
+    padding: 13px;
+    border: 1px solid var(--signal);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--signal);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  button:hover:not(:disabled){
+    background: var(--signal);
+    color: #1c1b19;
+  }
+
+  button:focus-visible{
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
+
+  button:disabled{
+    border-color: var(--line);
+    color: var(--ink-soft);
+    cursor: not-allowed;
+  }
+
+  .meter{
+    display: none;
+    margin-top: 20px;
+    gap: 3px;
+    align-items: flex-end;
+    height: 28px;
+  }
+
+  .meter.active{
+    display: flex;
+  }
+
+  .meter span{
+    flex: 1;
+    background: var(--signal-dim);
+    border-radius: 1px;
+    animation: level 1.1s ease-in-out infinite;
+  }
+
+  .meter span:nth-child(2n){ animation-delay: 0.15s; }
+  .meter span:nth-child(3n){ animation-delay: 0.3s; }
+  .meter span:nth-child(4n){ animation-delay: 0.45s; }
+
+  @keyframes level{
+    0%, 100% { height: 20%; background: var(--signal-dim); }
+    50% { height: 100%; background: var(--signal); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .meter span{ animation: none; height: 60%; }
+  }
+
+  .loading-label{
+    margin-top: 10px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--ink-soft);
+    text-align: center;
+    display: none;
+  }
+
+  .loading-label.active{ display: block; }
+
+  .error{
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 3px;
+    border: 1px solid var(--danger);
+    background: rgba(217, 97, 79, 0.1);
+    color: #f0a99b;
+    font-size: 13px;
+  }
+
+  .result{
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+
+  .result-header{
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+  }
+
+  .result-header h2{
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: none;
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+  }
+
+  .result-header .copy-btn{
+    width: auto;
+    margin: 0;
+    padding: 4px 10px;
+    font-size: 11px;
+    border-color: var(--line);
+    color: var(--ink-soft);
+  }
+
+  .result-header .copy-btn:hover{
+    background: var(--line);
+    color: var(--paper);
+  }
+
+  .filename{
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    margin-bottom: 12px;
+  }
+
+  .transcript{
+    background: #181715;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 18px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    min-height: 100px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--paper);
+  }
+</style>
+</head>
+<body>
+
+<div class="rack">
+
+  <div class="header">
+    <h1>Speech to text</h1>
+    <div class="status"><span class="dot" aria-hidden="true"></span>ready</div>
+  </div>
+
+  <div class="panel">
+
+    <p class="subtitle">Upload an audio file and generate a transcript.</p>
+
+    <form method="POST" enctype="multipart/form-data" onsubmit="return startLoading()">
+      {% csrf_token %}
+
+      <div class="dropzone" id="dropzone">
+        <div class="dropzone-inner">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="M9 18V5l12-2v13" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="6" cy="18" r="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="18" cy="16" r="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="primary" id="dropLabel">Drop an audio file here, or click to browse</div>
+          <div class="secondary" id="dropSecondary">no file selected</div>
+        </div>
+        <input type="file" name="audio" id="audio"
+          accept=".mp3,.wav,.flac,.m4a,.mp4,.ogg,.webm,.aac,.aiff"
+          required aria-label="Audio file to transcribe">
+      </div>
+
+      <div class="formats">MP3 · WAV · FLAC · M4A · MP4 · OGG · WEBM · AAC · AIFF</div>
+
+      <button type="submit" id="submitButton">Transcribe audio</button>
+
+      <div class="meter" id="meter" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="loading-label" id="loadingLabel" role="status">Transcribing — this can take a while on CPU</div>
+    </form>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    {% if transcript %}
+    <div class="result">
+      <div class="result-header">
+        <h2>Transcript</h2>
+        <button type="button" class="copy-btn" onclick="copyTranscript()">Copy</button>
+      </div>
+      <div class="filename">{{ filename }}</div>
+      <div class="transcript" id="transcriptText">{{ transcript }}</div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('audio');
+  const dropLabel = document.getElementById('dropLabel');
+  const dropSecondary = document.getElementById('dropSecondary');
+
+  function showFileName(file){
+    if(!file) return;
+    dropLabel.innerHTML = 'Selected: <span class="file-name">' + file.name + '</span>';
+    dropSecondary.textContent = (file.size / (1024*1024)).toFixed(1) + ' MB';
+  }
+
+  fileInput.addEventListener('change', () => {
+    if(fileInput.files.length) showFileName(fileInput.files[0]);
+  });
+
+  ['dragenter', 'dragover'].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.add('drag');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(evt => {
+    dropzone.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('drag');
+    });
+  });
+
+  dropzone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer.files[0];
+    if(file){
+      fileInput.files = e.dataTransfer.files;
+      showFileName(file);
+    }
+  });
+
+  function startLoading(){
+    if(!fileInput.files.length) return true;
+    document.getElementById('meter').classList.add('active');
+    document.getElementById('loadingLabel').classList.add('active');
+    const button = document.getElementById('submitButton');
+    button.disabled = true;
+    button.innerText = 'Transcribing…';
+    return true;
+  }
+
+  function copyTranscript(){
+    const text = document.getElementById('transcriptText').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      const original = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(() => btn.textContent = original, 1500);
+    });
+  }
+</script>
+
+</body>
+</html>

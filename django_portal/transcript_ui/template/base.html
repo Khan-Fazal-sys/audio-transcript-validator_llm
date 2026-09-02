@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Speech to Text</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background:
+                linear-gradient(135deg,
+                    #0f172a,
+                    #1e293b);
+
+            color: #f8fafc;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            padding: 30px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .card {
+            background: #ffffff;
+            color: #0f172a;
+
+            border-radius: 20px;
+
+            padding: 40px;
+
+            box-shadow:
+                0 25px 60px rgba(0, 0, 0, 0.35);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 10px;
+
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+
+            border-radius: 14px;
+
+            padding: 35px;
+
+            text-align: center;
+
+            background: #f8fafc;
+
+            transition: 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: #6366f1;
+            background: #eef2ff;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+
+            border: 1px solid #cbd5e1;
+
+            border-radius: 10px;
+
+            background: white;
+
+            cursor: pointer;
+        }
+
+        .formats {
+            margin-top: 12px;
+
+            font-size: 13px;
+
+            color: #64748b;
+        }
+
+        button {
+            width: 100%;
+
+            margin-top: 25px;
+
+            padding: 14px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            background: #4f46e5;
+
+            color: white;
+
+            font-size: 16px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #4338ca;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .error {
+            margin-top: 25px;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+            border: 1px solid #fecaca;
+        }
+
+        .result {
+            margin-top: 30px;
+
+            padding: 20px;
+
+            border-radius: 12px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e2e8f0;
+        }
+
+        .result-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 15px;
+        }
+
+        .result-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .filename {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .transcript {
+            background: white;
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 10px;
+
+            padding: 18px;
+
+            line-height: 1.7;
+
+            white-space: pre-wrap;
+
+            min-height: 100px;
+        }
+
+        .loading {
+            display: none;
+
+            margin-top: 20px;
+
+            text-align: center;
+
+            color: #4f46e5;
+
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <div class="container">
+
+        <div class="card">
+
+            <h1>Speech to Text</h1>
+
+            <div class="subtitle">
+                Upload an audio file and generate a transcript
+                using Qwen ASR.
+            </div>
+
+
+            <form method="POST" enctype="multipart/form-data" onsubmit="startLoading()">
+
+                {% csrf_token %}
+
+
+                <div class="upload-area">
+
+                    <input type="file" name="audio" id="audio" accept="
+                        .mp3,
+                        .wav,
+                        .flac,
+                        .m4a,
+                        .mp4,
+                        .ogg,
+                        .webm,
+                        .aac,
+                        .aiff
+                    " required>
+
+                    <div class="formats">
+                        Supported:
+                        MP3, WAV, FLAC, M4A, MP4,
+                        OGG, WebM, AAC, AIFF
+                    </div>
+
+                </div>
+
+
+                <button type="submit" id="submitButton">
+                    Transcribe Audio
+                </button>
+
+
+                <div class="loading" id="loading">
+                    Transcribing audio...
+                    This may take a while on CPU.
+                </div>
+
+            </form>
+
+
+            {% if error %}
+
+            <div class="error">
+                {{ error }}
+            </div>
+
+            {% endif %}
+
+
+            {% if transcript %}
+
+            <div class="result">
+
+                <div class="result-header">
+
+                    <h2>
+                        Transcript
+                    </h2>
+
+                    <span class="filename">
+                        {{ filename }}
+                    </span>
+
+                </div>
+
+
+                <div class="transcript">
+                    {{ transcript }}
+                </div>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        function startLoading() {
+
+            document.getElementById(
+                "loading"
+            ).style.display = "block";
+
+
+            const button =
+                document.getElementById(
+                    "submitButton"
+                );
+
+            button.disabled = true;
+
+            button.innerText =
+                "Transcribing...";
+
+        }
+
+    </script>
+
+</body>
+
+</html>
