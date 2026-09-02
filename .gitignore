@@ -1,0 +1,31 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Audio files
+*.mp3
+*.flac
+*.wav
+*.m4a
+*.mp4
+*.ogg
+*.webm
+*.aac
+*.aiff
+
+# Uploaded files
+uploads/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Django
+db.sqlite3

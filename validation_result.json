@@ -1,0 +1,32 @@
+{
+  "audio_file": "/home/fazal/Documents/STT/input.mp3",
+  "original_transcript": "I got a song. It's pretty groovy and pretty soon I'll make a movie. It's elementary. A documentary about pickpockets in the metro. I see them often. They do that dirt. I help metro riders to stay alert. I'm the metro swinger with a busted finger. Fight pickpockets in the metro. When I sing in the metro, I see them pass my way. So I make a documentary. But I have quite a few things to say. No time for dancing. I need financing. Please fill my chapel to the brim. Help me make my little film. Won't you join me? Fight these pickpockets in the metro. In the metro. In the metro. In the metro.",
+  "validation": {
+    "matches": false,
+    "confidence": 0.85,
+    "corrected_transcript": "I got a song. It's pretty groovy and pretty soon I'll make a movie. It's elementary. A documentary about pickpockets in the metro. I see them often. They do that dirt. I help metro riders to stay alert. I'm the metro swinger with a busted finger. Fighting pickpockets in metro. When I sing in the metro, I see them pass my way. So I'll make a documentary, 'cuz I have quite a few things to say. No time for dancing. I need financing. Please fill my chapeau to the brim. Help me make my little film. Won't you join me? Fight these pickpockets in the metro. In the metro. In the metro. In the metro.",
+    "discrepancies": [
+      {
+        "transcript_says": "Fight pickpockets in the metro.",
+        "audio_actually_says": "Fighting pickpockets in metro.",
+        "severity": "minor"
+      },
+      {
+        "transcript_says": "So I make a documentary.",
+        "audio_actually_says": "So I'll make a documentary,",
+        "severity": "minor"
+      },
+      {
+        "transcript_says": "But I have quite a few things to say.",
+        "audio_actually_says": "'cuz I have quite a few things to say.",
+        "severity": "minor"
+      },
+      {
+        "transcript_says": "Please fill my chapel to the brim.",
+        "audio_actually_says": "Please fill my chapeau to the brim.",
+        "severity": "major"
+      }
+    ]
+  },
+  "updated_transcript": "I got a song. It's pretty groovy and pretty soon I'll make a movie. It's elementary. A documentary about pickpockets in the metro. I see them often. They do that dirt. I help metro riders to stay alert. I'm the metro swinger with a busted finger. Fighting pickpockets in metro. When I sing in the metro, I see them pass my way. So I'll make a documentary, 'cuz I have quite a few things to say. No time for dancing. I need financing. Please fill my chapeau to the brim. Help me make my little film. Won't you join me? Fight these pickpockets in the metro. In the metro. In the metro. In the metro."
+}
