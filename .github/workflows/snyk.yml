@@ -1,0 +1,28 @@
+name: Snyk Code Scan
+
+on:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  snyk-code:
+    name: Scan source code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Snyk CLI
+        run: npm install --global snyk
+
+      - name: Run Snyk Code scan
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk code test --org=8e9b86b2-4660-49df-90a5-aef8491b0eb7 --severity-threshold=high
